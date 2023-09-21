@@ -164,6 +164,13 @@ const onCollapseOrExpand = (collapse: boolean, entry: SubPanelProps, idx: number
   siblingExpandedPanel.style.flexGrow = `${newFlexGrow}`
   entry.collapsed = collapse
 }
+
+const computeResizeHandleDisabled = (prev: SubPanelProps | undefined, current: SubPanelProps, next: SubPanelProps | undefined) => {
+  if (current.collapsed && next?.collapsed) {
+    // return true
+  }
+  return false
+}
 </script>
 
 <template>
@@ -178,6 +185,7 @@ const onCollapseOrExpand = (collapse: boolean, entry: SubPanelProps, idx: number
       </template>
       <template v-slot:after>
         <ResizeHandle class="resize-handle"
+            :class="{ disabled: computeResizeHandleDisabled(children[idx - 1], children[idx], children[idx + 1])}"
             v-if="idx !== children.length - 1"
             @resizestart="e => onResizeStart(e, idx)"
             @resize="e => onResize(e, idx)"
@@ -196,6 +204,12 @@ const onCollapseOrExpand = (collapse: boolean, entry: SubPanelProps, idx: number
     background-color: rgb(0, 64, 115);
     color: #fff;
   }
+
+  .resize-handle.disabled {
+    cursor: default;
+    user-select: none;
+  }
+
   > .sub-panel + .resize-handle, > .resize-handle + .sub-panel {
     margin-top: calc(-0.5 * 6px);
   }
