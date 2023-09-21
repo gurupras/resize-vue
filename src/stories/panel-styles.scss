@@ -3,4 +3,12 @@
     height: 90vh;
     border: thin solid #2e2e2e;
     border-radius: 4px;
+
+    .sub-panel-root {
+        background-color: #eaeaea;
+
+        .panel-title {
+            background-color: #8e8e8e;
+        }
+    }
 }

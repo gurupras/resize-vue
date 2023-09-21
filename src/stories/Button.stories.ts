@@ -30,5 +30,36 @@ export const Basic: Story = {
     }, {
       title: 'Child 3'
     }]
-  }
+  },
+  render: (args, { argTypes }) => ({
+    components: { Panel },
+    setup () {
+      return { args }
+    },
+    template: `
+      <div style="height: 100vh; width: 100vw; display: flex; flex-direction: row; flex: 1">
+        <div style="display: flex; flex: 1; max-width: 420px">
+          <Panel v-bind="args"/>
+        </div>
+        <div style="display: flex; flex-direction: column; flex: 1; justify-content: center; margin-left: 12em">
+          <div style="margin: 2em 0">
+            <button class="button is-link" @click="addChild">Add Child</button>
+          </div>
+          <div style="margin: 2em 0">
+            <button class="button is-link" @click="removeChild">Remove Child</button>
+          </div>
+        </div>
+      </div>
+    `,
+    methods: {
+      addChild () {
+        args.children.push({
+          title: `Child ${args.children.length + 1}`
+        })
+      },
+      removeChild () {
+        args.children.splice(args.children.length - 1, 1)
+      }
+    }
+  })
 }

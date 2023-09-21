@@ -40,11 +40,9 @@ onMounted(() => {
 .sub-panel-root {
   flex-direction: column;
   flex: 1;
-  background-color: #6e6e6e;
   transition: flex-grow 0.1s linear;
   .panel-title {
-    height: 23px;
-    background-color: #8e8e8e;
+    height: var(--panel-title-height);
     color: #000;
     cursor: pointer;
     display: inline-flex;

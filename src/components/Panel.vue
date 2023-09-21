@@ -189,8 +189,10 @@ const onCollapseOrExpand = (collapse: boolean, entry: SubPanelProps, idx: number
 
 <style lang="scss" scoped>
 .panel-root {
+  --panel-title-height: 24px;
   .panel-title {
-    height: 23px;
+    padding: 0 8px;
+    height: var(--panel-title-height, 24px);
     background-color: rgb(0, 64, 115);
     color: #fff;
   }
