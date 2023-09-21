@@ -167,7 +167,7 @@ const onCollapseOrExpand = (collapse: boolean, entry: SubPanelProps, idx: number
 
 const computeResizeHandleDisabled = (prev: SubPanelProps | undefined, current: SubPanelProps, next: SubPanelProps | undefined) => {
   if (current.collapsed && next?.collapsed) {
-    // return true
+    return true
   }
   return false
 }
@@ -198,6 +198,7 @@ const computeResizeHandleDisabled = (prev: SubPanelProps | undefined, current: S
 <style lang="scss" scoped>
 .panel-root {
   --panel-title-height: 24px;
+
   .panel-title {
     padding: 0 8px;
     height: var(--panel-title-height, 24px);
@@ -205,9 +206,17 @@ const computeResizeHandleDisabled = (prev: SubPanelProps | undefined, current: S
     color: #fff;
   }
 
-  .resize-handle.disabled {
-    cursor: default;
-    user-select: none;
+  .resize-handle {
+    &:hover {
+      background-color: var(--resize-hover-color);
+      transition: background-color 0.2s ease-in-out;
+      transition-delay: 0.3s;
+    }
+
+    .disabled {
+      cursor: default;
+      user-select: none;
+    }
   }
 
   > .sub-panel + .resize-handle, > .resize-handle + .sub-panel {

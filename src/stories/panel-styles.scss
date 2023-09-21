@@ -1,8 +1,11 @@
 .panel-root {
+    --resize-hover-color: rgb(0, 120, 212);
+
     width: 320px;
     height: 90vh;
     border: thin solid #2e2e2e;
     border-radius: 4px;
+
 
     .sub-panel-root {
         background-color: #eaeaea;
