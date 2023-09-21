@@ -24,11 +24,11 @@ type Story = StoryObj<typeof Panel>;
 export const Basic: Story = {
   args: {
     children: [{
-      title: 'Sub Panel 1'
+      title: 'Child 1'
     }, {
-      title: 'Sub Panel 2'
+      title: 'Child 2'
     }, {
-      title: 'Sub Panel 3'
+      title: 'Child 3'
     }]
   }
 }

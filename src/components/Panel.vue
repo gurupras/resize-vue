@@ -168,6 +168,7 @@ const onCollapseOrExpand = (collapse: boolean, entry: SubPanelProps, idx: number
 
 <template>
   <div class="panel-root is-flex is-flex-direction-column is-flex-grow-1" :class="{ resizing }">
+    <div class="panel-title">Container</div>
     <SubPanelTemplate v-for="(entry, idx) in children" :key="idx">
       <template v-slot:content>
         <SubPanel ref="panels"
@@ -176,7 +177,11 @@ const onCollapseOrExpand = (collapse: boolean, entry: SubPanelProps, idx: number
             class="sub-panel"/>
       </template>
       <template v-slot:after>
-        <ResizeHandle class="resize-handle" v-if="idx !== children.length - 1" @resizestart="e => onResizeStart(e, idx)" @resize="e => onResize(e, idx)" @resizeend="resizing = false"/>
+        <ResizeHandle class="resize-handle"
+            v-if="idx !== children.length - 1"
+            @resizestart="e => onResizeStart(e, idx)"
+            @resize="e => onResize(e, idx)"
+            @resizeend="resizing = false"/>
       </template>
     </SubPanelTemplate>
   </div>
@@ -184,6 +189,11 @@ const onCollapseOrExpand = (collapse: boolean, entry: SubPanelProps, idx: number
 
 <style lang="scss" scoped>
 .panel-root {
+  .panel-title {
+    height: 23px;
+    background-color: rgb(0, 64, 115);
+    color: #fff;
+  }
   > .sub-panel + .resize-handle, > .resize-handle + .sub-panel {
     margin-top: calc(-0.5 * 6px);
   }
