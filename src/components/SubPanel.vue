@@ -39,7 +39,7 @@ onMounted(() => {
       <i-mdi-chevron-right v-if="collapsed"/>
       <i-mdi-chevron-down v-else/>
     </span>
-    {{ title }}
+    <span>{{ title }}</span>
   </div>
   <div class="content is-flex is-flex-direction-column" ref="content">
   </div>
@@ -53,9 +53,12 @@ onMounted(() => {
   transition: flex-grow 0.1s linear, min-height 0.1s linear;
   .panel-title {
     height: var(--panel-title-height);
-    color: #000;
+    background-color: var(--sub-panel-title-bg);
+    color: var(--sub-panel-title-color);
+    font-size: 1em;
     cursor: pointer;
     display: inline-flex;
+    align-items: center;
     user-select: none;
     .icon {
       margin-right: 4px;

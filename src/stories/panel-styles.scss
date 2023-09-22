@@ -1,6 +1,10 @@
 .panel-root {
+    --panel-bg: rgb(245, 245, 245);
+    --sub-panel-title-bg: #FFF;
+    --sub-panel-title-color: #616161;
     --resize-handle-height: 4px;
     --resize-hover-color: rgb(0, 120, 212);
+
     overflow-y: auto;
 
     width: 320px;
@@ -11,12 +15,12 @@
 
     .sub-panel-root {
         min-height: 24px;
-        &.collapsed {
-        }
-        background-color: #eaeaea;
+    }
 
-        .panel-title {
-            background-color: #8e8e8e;
+    // Add border to signal where the resize handle will be
+    > .resize-handle + .sub-panel-root {
+        > .panel-title {
+            border-top: thin solid #eaeaea;
         }
     }
 }

@@ -199,6 +199,7 @@ const computeResizeHandleDisabled = (prev: SubPanelProps | undefined, current: S
 <style lang="scss" scoped>
 .panel-root {
   --panel-title-height: 24px;
+  background-color: var(--panel-bg);
 
   .panel-title {
     padding: 0 8px;
