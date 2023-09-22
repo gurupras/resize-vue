@@ -1,5 +1,7 @@
 .panel-root {
+    --resize-handle-height: 4px;
     --resize-hover-color: rgb(0, 120, 212);
+    overflow-y: auto;
 
     width: 320px;
     height: 90vh;
@@ -8,6 +10,9 @@
 
 
     .sub-panel-root {
+        min-height: 24px;
+        &.collapsed {
+        }
         background-color: #eaeaea;
 
         .panel-title {

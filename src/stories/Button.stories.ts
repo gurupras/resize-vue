@@ -3,6 +3,7 @@ import type { Meta, StoryObj } from '@storybook/vue3'
 import Panel from '../components/Panel.vue'
 import 'bulma/bulma.sass'
 import './panel-styles.scss'
+import { nextTick } from 'vue'
 
 // More on how to set up stories at: https://storybook.js.org/docs/vue/writing-stories/introduction
 const meta: Meta<typeof Panel> = {
@@ -29,6 +30,8 @@ export const Basic: Story = {
       title: 'Child 2'
     }, {
       title: 'Child 3'
+    }, {
+      title: 'Child 4'
     }]
   },
   render: (args, { argTypes }) => ({
@@ -60,6 +63,12 @@ export const Basic: Story = {
       removeChild () {
         args.children.splice(args.children.length - 1, 1)
       }
+    },
+    async mounted () {
+      await new Promise(resolve => setTimeout(resolve, 300))
+      args.children[1].collapsed = true
+      await new Promise(resolve => setTimeout(resolve, 300))
+      args.children[2].collapsed = true
     }
   })
 }

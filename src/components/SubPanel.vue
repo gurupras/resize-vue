@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted, ref } from 'vue'
+import { onMounted, ref, watch } from 'vue'
 import type { SubPanelProps } from './types'
 const props = withDefaults(defineProps<SubPanelProps>(), {
   collapsed: false
@@ -9,7 +9,9 @@ const $el = ref<HTMLElement>(null as any)
 const content = ref<HTMLElement>(null as any)
 
 const emit = defineEmits<{
-  (e: 'update:collapsed', value: boolean): void
+  (e: 'update:collapsed', value: boolean): void,
+  (e: 'collapsed'): void,
+  (e: 'expanded'): void,
 }>()
 
 defineExpose({ $el })
@@ -17,6 +19,14 @@ defineExpose({ $el })
 const toggle = () => {
   emit('update:collapsed', !props.collapsed)
 }
+
+const collapsedWatcher = watch(() => props.collapsed, (v) => {
+  if (v) {
+    emit('collapsed')
+  } else {
+    emit('expanded')
+  }
+})
 
 onMounted(() => {
 })
@@ -40,7 +50,7 @@ onMounted(() => {
 .sub-panel-root {
   flex-direction: column;
   flex: 1;
-  transition: flex-grow 0.1s linear;
+  transition: flex-grow 0.1s linear, min-height 0.1s linear;
   .panel-title {
     height: var(--panel-title-height);
     color: #000;

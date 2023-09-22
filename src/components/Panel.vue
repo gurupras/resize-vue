@@ -162,7 +162,6 @@ const onCollapseOrExpand = (collapse: boolean, entry: SubPanelProps, idx: number
     newFlexGrow = siblingExpandedPanelFlexGrow - collapsedPanelFlexGrow
   }
   siblingExpandedPanel.style.flexGrow = `${newFlexGrow}`
-  entry.collapsed = collapse
 }
 
 const computeResizeHandleDisabled = (prev: SubPanelProps | undefined, current: SubPanelProps, next: SubPanelProps | undefined) => {
@@ -180,7 +179,9 @@ const computeResizeHandleDisabled = (prev: SubPanelProps | undefined, current: S
       <template v-slot:content>
         <SubPanel ref="panels"
             v-bind="entry"
-            @update:collapsed="v => onCollapseOrExpand(v, entry, idx)"
+            @update:collapsed="v => { entry.collapsed = v }"
+            @collapsed="onCollapseOrExpand(true, entry, idx)"
+            @expanded="onCollapseOrExpand(false, entry, idx)"
             class="sub-panel"/>
       </template>
       <template v-slot:after>
@@ -209,8 +210,8 @@ const computeResizeHandleDisabled = (prev: SubPanelProps | undefined, current: S
   .resize-handle {
     &:hover {
       background-color: var(--resize-hover-color);
-      transition: background-color 0.2s ease-in-out;
-      transition-delay: 0.3s;
+      transition: background-color 0.3s ease-in-out;
+      transition-delay: 0.2s;
     }
 
     .disabled {
@@ -220,7 +221,7 @@ const computeResizeHandleDisabled = (prev: SubPanelProps | undefined, current: S
   }
 
   > .sub-panel + .resize-handle, > .resize-handle + .sub-panel {
-    margin-top: calc(-0.5 * 6px);
+    margin-top: calc(-0.5 * var(--resize-handle-height));
   }
 
   &.resizing {
