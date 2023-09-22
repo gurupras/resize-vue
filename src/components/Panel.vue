@@ -226,6 +226,8 @@ const computeResizeHandleDisabled = (prev: SubPanelProps | undefined, current: S
   }
 
   &.resizing {
+    cursor: ns-resize;
+
     .sub-panel {
       transition: none;
     }
