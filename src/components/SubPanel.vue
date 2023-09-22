@@ -20,7 +20,7 @@ const toggle = () => {
   emit('update:collapsed', !props.collapsed)
 }
 
-const collapsedWatcher = watch(() => props.collapsed, (v) => {
+watch(() => props.collapsed, (v) => {
   if (v) {
     emit('collapsed')
   } else {
