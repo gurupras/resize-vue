@@ -53,7 +53,7 @@ onMounted(() => {
 .sub-panel-root {
   flex-direction: column;
   flex: 1;
-  // transition: height 0.1s linear 0.1s;
+  transition: height 0.1s linear 0.1s;
   .panel-title {
     width: 100%;
     height: var(--panel-title-height);
