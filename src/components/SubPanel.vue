@@ -12,6 +12,7 @@ const emit = defineEmits<{
   (e: 'update:collapsed', value: boolean): void,
   (e: 'collapsed'): void,
   (e: 'expanded'): void,
+  (e: 'mounted'): void
 }>()
 
 defineExpose({
@@ -32,6 +33,7 @@ watch(() => props.collapsed, (v) => {
 })
 
 onMounted(() => {
+  emit('mounted')
 })
 </script>
 
@@ -52,8 +54,7 @@ onMounted(() => {
 <style lang="scss" scoped>
 .sub-panel-root {
   flex-direction: column;
-  flex: 1;
-  transition: height 0.1s linear 0.1s;
+  transition: height 0.1s linear;
   .panel-title {
     width: 100%;
     height: var(--panel-title-height);
