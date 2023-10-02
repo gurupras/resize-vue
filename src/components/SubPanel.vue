@@ -72,6 +72,7 @@ onMounted(() => {
 
   .content {
     flex-grow: 1;
+    background-color: #eaeaae;
   }
 
   &.collapsed {
