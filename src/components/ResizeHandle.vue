@@ -32,6 +32,7 @@ const onMouseUp = (e: MouseEvent) => {
 
 <style lang="scss" scoped>
 .resize-handle-root {
+  position: relative;
   height: var(--resize-handle-height);
   cursor: ns-resize;
   width: 100%;

@@ -6,7 +6,7 @@ const props = withDefaults(defineProps<SubPanelProps>(), {
 })
 
 const $el = ref<HTMLElement>(null as any)
-const content = ref<HTMLElement>(null as any)
+const $content = ref<HTMLElement>(null as any)
 
 const emit = defineEmits<{
   (e: 'update:collapsed', value: boolean): void,
@@ -14,7 +14,10 @@ const emit = defineEmits<{
   (e: 'expanded'): void,
 }>()
 
-defineExpose({ $el })
+defineExpose({
+  $el,
+  $content
+})
 
 const toggle = () => {
   emit('update:collapsed', !props.collapsed)
@@ -41,7 +44,7 @@ onMounted(() => {
     </span>
     <span>{{ title }}</span>
   </div>
-  <div class="content is-flex is-flex-direction-column" ref="content">
+  <div class="content is-flex is-flex-direction-column" ref="$content">
   </div>
 </div>
 </template>
@@ -50,8 +53,9 @@ onMounted(() => {
 .sub-panel-root {
   flex-direction: column;
   flex: 1;
-  transition: flex-grow 0.1s linear, min-height 0.1s linear;
+  // transition: height 0.1s linear 0.1s;
   .panel-title {
+    width: 100%;
     height: var(--panel-title-height);
     background-color: var(--sub-panel-title-bg);
     color: var(--sub-panel-title-color);

@@ -24,3 +24,14 @@
         }
     }
 }
+
+.pixel-panel {
+    .sub-panel {
+    }
+    .sub-panel.collapsed {
+        height: 24px !important;
+    }
+    .sub-panel:not(.collapsed) {
+        min-height: 148px;
+    }
+}

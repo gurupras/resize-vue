@@ -132,6 +132,14 @@ function getResizeMethods () {
   }
 }
 
+const updateCollapsed = (collapse: boolean, idx: number) => {
+  props.children[idx].collapsed = collapse
+}
+
+defineExpose({
+  updateCollapsed
+})
+
 const onCollapseOrExpand = (collapse: boolean, entry: SubPanelProps, idx: number) => {
   // If this is the last expanded entry, find the entry above it that is expanded and add all of its flex to that
   let siblingExpandedPanel: HTMLElement
@@ -146,7 +154,8 @@ const onCollapseOrExpand = (collapse: boolean, entry: SubPanelProps, idx: number
     // Find the next expanded sub-panel and add all of its flex to that
     ;[, siblingExpandedPanel] = nextExpandedResult
   }
-  const collapsedPanel: HTMLElement = panels.value[idx].$el
+  const collapsedPanel: typeof SubPanel = panels.value[idx]
+  const collapsedPanelEl: HTMLElement = collapsedPanel.$el
 
   const siblingExpandedPanelCSS = window.getComputedStyle(siblingExpandedPanel)
 
@@ -154,11 +163,11 @@ const onCollapseOrExpand = (collapse: boolean, entry: SubPanelProps, idx: number
 
   let newFlexGrow: number
   if (collapse) {
-    const collapsedPanelCSS = window.getComputedStyle(collapsedPanel)
+    const collapsedPanelCSS = window.getComputedStyle(collapsedPanelEl)
     const collapsedPanelFlexGrow = Number(collapsedPanelCSS.flexGrow)
     newFlexGrow = collapsedPanelFlexGrow + siblingExpandedPanelFlexGrow
   } else {
-    const collapsedPanelFlexGrow = getFlexGrow(collapsedPanel)
+    const collapsedPanelFlexGrow = getFlexGrow(collapsedPanelEl)
     newFlexGrow = siblingExpandedPanelFlexGrow - collapsedPanelFlexGrow
   }
   siblingExpandedPanel.style.flexGrow = `${newFlexGrow}`
@@ -170,6 +179,17 @@ const computeResizeHandleDisabled = (prev: SubPanelProps | undefined, current: S
   }
   return false
 }
+
+;(window as any).compareFlex = (panel: HTMLElement) => {
+  const css = window.getComputedStyle(panel)
+  const { flexGrow: flexGrowRaw = '1' } = css
+  const flexGrow = Number(flexGrowRaw)
+  const parentSize = panel.closest('.panel-root')!.offsetHeight
+  const panelSize = panel.offsetHeight
+  const numChildren = panels.value.length
+  const ratio = panelSize / parentSize
+  console.log(`flex-grow=${flexGrow / numChildren} size=${ratio}`)
+}
 </script>
 
 <template>
@@ -179,7 +199,7 @@ const computeResizeHandleDisabled = (prev: SubPanelProps | undefined, current: S
       <template v-slot:content>
         <SubPanel ref="panels"
             v-bind="entry"
-            @update:collapsed="v => { entry.collapsed = v }"
+            @update:collapsed="v => updateCollapsed(v, idx)"
             @collapsed="onCollapseOrExpand(true, entry, idx)"
             @expanded="onCollapseOrExpand(false, entry, idx)"
             class="sub-panel"/>
