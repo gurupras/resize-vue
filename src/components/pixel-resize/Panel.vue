@@ -21,18 +21,18 @@ const findNextExpandedPanel = (idx: number) => {
 }
 
 const _findExpandedPanel = (idx: number, next: (idx: number) => number): ([number, HTMLElement] | null) => {
+  let entry: SubPanelProps | undefined
   let curIdx = idx
-  let entry = props.children[curIdx]
-  while (entry) {
+  do {
     curIdx = next(curIdx)
     entry = props.children[curIdx]
-    if (curIdx < 0 || curIdx === props.children.length) {
+    if (curIdx < 0 || curIdx >= props.children.length) {
       break
     }
     if (!entry.collapsed) {
       return [curIdx, panels.value[curIdx].$el]
     }
-  }
+  } while (entry)
   return null
 }
 
@@ -123,6 +123,33 @@ defineExpose({
   updateCollapsed
 })
 
+const getHeight = (el: HTMLElement) => {
+  let height = 0
+  let source = ''
+  if (el.style.height) {
+    height = Number(el.style.height.slice(0, -2))
+    source = 'inline'
+  } else {
+    source = 'offsetHeight'
+    height = el.offsetHeight
+  }
+  return { height, source }
+}
+const getTotalOccupiedHeight = (skippedPanels = new Set<typeof SubPanel>()) => {
+  let totalOccupiedHeight = 0
+  for (let idx = 0; idx < panels.value.length; idx++) {
+    const panel = panels.value[idx]!
+    if (skippedPanels.has(panel)) {
+      continue
+    }
+    const el: HTMLElement = panel.$el
+    const { height, source } = getHeight(el)
+    console.log(`panel-${idx}: height=${height} source=${source}`)
+    totalOccupiedHeight += height
+  }
+  return totalOccupiedHeight
+}
+
 const onCollapseOrExpand = async (collapse: boolean, entry: SubPanelProps, idx: number) => {
   // If this is the last expanded entry, find the entry above it that is expanded and add all of its flex to that
   if (collapse) {
@@ -159,33 +186,6 @@ const onCollapse = async (entry: SubPanelProps, idx: number) => {
   siblingExpandedPanel.style.height = `${siblingExpandedPanel.offsetHeight + unoccupiedHeight}px`
   // TODO: Since we modified a sibling panel's height, figure out if we should reset userHeight
   collapsedPanelEl.style.height = `${collapsedPanelMinHeight}px`
-}
-
-const getHeight = (el: HTMLElement) => {
-  let height = 0
-  let source = ''
-  if (el.style.height) {
-    height = Number(el.style.height.slice(0, -2))
-    source = 'inline'
-  } else {
-    source = 'offsetHeight'
-    height = el.offsetHeight
-  }
-  return { height, source }
-}
-const getTotalOccupiedHeight = (skippedPanels = new Set<typeof SubPanel>()) => {
-  let totalOccupiedHeight = 0
-  for (let idx = 0; idx < panels.value.length; idx++) {
-    const panel = panels.value[idx]!
-    if (skippedPanels.has(panel)) {
-      continue
-    }
-    const el: HTMLElement = panel.$el
-    const { height, source } = getHeight(el)
-    console.log(`panel-${idx}: height=${height} source=${source}`)
-    totalOccupiedHeight += height
-  }
-  return totalOccupiedHeight
 }
 
 const onExpand = async (entry: SubPanelProps, idx: number) => {
@@ -281,6 +281,25 @@ const computeResizeHandleDisabled = (prev: SubPanelProps | undefined, current: S
   }
   return false
 }
+
+const beforeSubPanelUnmount = (entry: SubPanelProps, idx: number) => {
+  // Find the next panel and trigger onExpand on it
+  let nextIdx: number | undefined
+  const result = findNextExpandedPanel(idx)
+  if (result) {
+    ;[nextIdx] = result
+  } else {
+    const result = findPrevExpandedPanel(idx)
+    if (!result) {
+      return
+    }
+    ;[nextIdx] = result
+  }
+  if (nextIdx === undefined) {
+    return
+  }
+  onExpand(props.children[nextIdx], nextIdx)
+}
 </script>
 
 <template>
@@ -296,6 +315,7 @@ const computeResizeHandleDisabled = (prev: SubPanelProps | undefined, current: S
                 @collapsed="onCollapseOrExpand(true, entry, idx)"
                 @expanded="onCollapseOrExpand(false, entry, idx)"
                 @mounted="onCollapseOrExpand(!!entry.collapsed, entry, idx)"
+                @before-unmount="beforeSubPanelUnmount(entry, idx)"
                 class="sub-panel"/>
           </template>
           <template v-slot:after>

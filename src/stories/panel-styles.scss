@@ -34,3 +34,7 @@
     .sub-panel:not(.collapsed) {
     }
 }
+
+.expand-leave-from, .expand-leave-active, .expand-leave-to {
+    height: 0px !important;
+}

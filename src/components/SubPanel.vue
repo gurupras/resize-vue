@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted, ref, watch } from 'vue'
+import { onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import type { SubPanelProps } from './types'
 const props = withDefaults(defineProps<SubPanelProps>(), {
   collapsed: false
@@ -12,7 +12,8 @@ const emit = defineEmits<{
   (e: 'update:collapsed', value: boolean): void,
   (e: 'collapsed'): void,
   (e: 'expanded'): void,
-  (e: 'mounted'): void
+  (e: 'mounted'): void,
+  (e: 'beforeUnmount'): void
 }>()
 
 defineExpose({
@@ -35,6 +36,10 @@ watch(() => props.collapsed, (v) => {
 onMounted(() => {
   emit('mounted')
 })
+
+onBeforeUnmount(() => {
+  emit('beforeUnmount')
+})
 </script>
 
 <template>
@@ -54,7 +59,7 @@ onMounted(() => {
 <style lang="scss" scoped>
 .sub-panel-root {
   flex-direction: column;
-  transition: height 0.1s linear;
+  transition: height 0.1s ease-in-out;
   .panel-title {
     width: 100%;
     height: var(--panel-title-height);
