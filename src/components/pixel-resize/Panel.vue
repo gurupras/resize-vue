@@ -29,7 +29,7 @@ const _findExpandedPanel = (idx: number, next: (idx: number) => number): ([numbe
     if (curIdx < 0 || curIdx >= props.children.length) {
       break
     }
-    if (!entry.collapsed) {
+    if (!entry.collapsed && panels.value[curIdx]) {
       return [curIdx, panels.value[curIdx].$el]
     }
   } while (entry)
@@ -130,8 +130,8 @@ const getHeight = (el: HTMLElement) => {
     height = Number(el.style.height.slice(0, -2))
     source = 'inline'
   } else {
-    source = 'offsetHeight'
-    height = el.offsetHeight
+    source = 'scrollHeight'
+    height = el.scrollHeight
   }
   return { height, source }
 }
@@ -150,12 +150,12 @@ const getTotalOccupiedHeight = (skippedPanels = new Set<typeof SubPanel>()) => {
   return totalOccupiedHeight
 }
 
-const onCollapseOrExpand = async (collapse: boolean, entry: SubPanelProps, idx: number) => {
+const onCollapseOrExpand = async (collapse: boolean, entry: SubPanelProps, idx: number, initialMount = false) => {
   // If this is the last expanded entry, find the entry above it that is expanded and add all of its flex to that
   if (collapse) {
     onCollapse(entry, idx)
   } else {
-    onExpand(entry, idx)
+    onExpand(entry, idx, initialMount)
   }
 }
 
@@ -180,15 +180,15 @@ const onCollapse = async (entry: SubPanelProps, idx: number) => {
   await nextTick()
   // const collapsedPanelMinHeight = Number(getComputedStyle(collapsedPanelEl).height.slice(0, -2))
   const parent = collapsedPanelEl.parentElement!
-  const totalParentHeight = parent.offsetHeight
+  const totalParentHeight = parent.scrollHeight
   const totalOccupiedHeight = getTotalOccupiedHeight(new Set([collapsedPanel])) + collapsedPanelMinHeight
   const unoccupiedHeight = totalParentHeight - totalOccupiedHeight
-  siblingExpandedPanel.style.height = `${siblingExpandedPanel.offsetHeight + unoccupiedHeight}px`
+  siblingExpandedPanel.style.height = `${siblingExpandedPanel.scrollHeight + unoccupiedHeight}px`
   // TODO: Since we modified a sibling panel's height, figure out if we should reset userHeight
   collapsedPanelEl.style.height = `${collapsedPanelMinHeight}px`
 }
 
-const onExpand = async (entry: SubPanelProps, idx: number) => {
+const onExpand = async (entry: SubPanelProps, idx: number, initialMount = false) => {
   // Algorithm:
   // If there is a user-defined height on this element:
   //   - Check to see if this height + sum of remaining panel heights is > parent height
@@ -204,9 +204,9 @@ const onExpand = async (entry: SubPanelProps, idx: number) => {
   if (!panelEl.dataset.userHeight && panelEl.style.height) {
     // This height has been set by the collapse of some panel around it.
     // Replace the height before nextTick so that it doesn't try to take up the space
-    panelEl.style.height = `${panelEl.offsetHeight}px`
+    panelEl.style.height = `${panelEl.scrollHeight}px`
   }
-  const currentCollapsedHeight = panelEl.offsetHeight
+  const currentCollapsedHeight = panelEl.scrollHeight
   let spaceNeeded = 0
   if (panelEl.dataset.userHeight) {
     // TODO: Implement this
@@ -218,13 +218,21 @@ const onExpand = async (entry: SubPanelProps, idx: number) => {
   await nextTick()
   console.log(`[expand-${idx}] after nextTick()`)
   const parent = panelEl.parentElement!
-  const totalParentHeight = parent.offsetHeight
+  let totalParentHeight = parent.scrollHeight
+  if (initialMount) {
+    if (parent.scrollHeight > parent.offsetHeight) {
+      // Parent height has already increased with this new panel's collapsed height
+      // We decrease it here so that it doesn't overflow the parent
+      totalParentHeight -= currentCollapsedHeight
+    }
+  }
+
   // Because we may have transitions that start off after our nextTick above, we need to
   // exclude this panel's current height while computing total occupied height---it is dynamic.
   // Instead, we add the previously computed collapsed height
   const totalOccupiedHeight = getTotalOccupiedHeight(new Set([panel])) + currentCollapsedHeight
   const unoccupiedHeight = totalParentHeight - totalOccupiedHeight
-  console.log(`[expand-${idx}]: totalOccupiedHeight=${totalOccupiedHeight} unoccupiedHeight=${unoccupiedHeight}`)
+  console.log(`[expand-${idx}]: totalParentHeight=${totalParentHeight} totalOccupiedHeight=${totalOccupiedHeight} unoccupiedHeight=${unoccupiedHeight}`)
   if (unoccupiedHeight > 0) {
     panelEl.style.height = `${unoccupiedHeight + currentCollapsedHeight}px`
     console.log(`[expand-${idx}]: completed`)
@@ -248,7 +256,7 @@ const onExpand = async (entry: SubPanelProps, idx: number) => {
     return remainingSpaceNeeded
   }
 
-  let remainingSpaceNeeded = spaceNeeded
+  let remainingSpaceNeeded = spaceNeeded - unoccupiedHeight
   let curIdx = idx
   while (remainingSpaceNeeded > 0) {
     const result = findNextExpandedPanel(curIdx)
@@ -300,21 +308,66 @@ const beforeSubPanelUnmount = (entry: SubPanelProps, idx: number) => {
   }
   onExpand(props.children[nextIdx], nextIdx)
 }
+
+onMounted(async () => {
+  await new Promise<void>(resolve => setTimeout(resolve, 300))
+  const resizeObserver = new ResizeObserver(entries => {
+    let foundPanelContent = false
+    for (const entry of entries) {
+      foundPanelContent = entry.target === $panelContent.value
+      if (foundPanelContent) {
+        break
+      }
+    }
+    if (!foundPanelContent) {
+      return
+    }
+    const height = $panelContent.value.offsetHeight
+    const totalOccupiedHeight = getTotalOccupiedHeight()
+    console.log(`new height=${height} totalOccupiedHeight=${totalOccupiedHeight}`)
+    const diff = height - totalOccupiedHeight
+
+    const shrinkableChildren = props.children.filter((x, idx) => {
+      if (x.collapsed) {
+        return false
+      }
+      const panel = panels.value[idx]
+      const panelEl: HTMLElement = panel.$el
+      if (panelEl.offsetHeight <= 148) { // FIXME: hard-coded height
+        return false
+      }
+      return true
+    })
+    const perPanelDiff = diff / shrinkableChildren.length
+
+    for (let idx = 0; idx < props.children.length; idx++) {
+      const panelProps = props.children[idx]
+      if (panelProps.collapsed) {
+        continue
+      }
+      const panel = panels.value[idx]
+      const panelEl: HTMLElement = panel.$el
+      panelEl.style.height = `${panelEl.offsetHeight + perPanelDiff}px`
+    }
+  })
+  // resizeObserver.observe($panelContent.value, { box: 'device-pixel-content-box' })
+})
 </script>
 
 <template>
-  <div class="panel-root is-flex is-flex-direction-column is-flex-grow-1" :class="{ resizing }">
+  <div class="panel-root is-flex is-flex-direction-column is-flex-grow-1" :class="{ resizing }" ref="$el">
     <div class="panel-title">Container</div>
     <div class="panel-content-wrapper">
-      <div class="panel-content">
+      <div class="panel-content" ref="$panelContent">
         <SubPanelTemplate v-for="(entry, idx) in children" :key="idx">
           <template v-slot:content>
             <SubPanel ref="panels"
+                :data-idx="idx"
                 v-bind="entry"
                 @update:collapsed="v => updateCollapsed(v, idx)"
                 @collapsed="onCollapseOrExpand(true, entry, idx)"
                 @expanded="onCollapseOrExpand(false, entry, idx)"
-                @mounted="onCollapseOrExpand(!!entry.collapsed, entry, idx)"
+                @mounted="onCollapseOrExpand(!!entry.collapsed, entry, idx, true)"
                 @before-unmount="beforeSubPanelUnmount(entry, idx)"
                 class="sub-panel"/>
           </template>
@@ -359,7 +412,8 @@ const beforeSubPanelUnmount = (entry: SubPanelProps, idx: number) => {
   .panel-content {
     display: block !important;
     height: 100%;
-    overflow: hidden;
+    overflow-x: hidden;
+    overflow-y: auto;
 
     > .sub-panel + .resize-handle {
       // margin-top: calc(-1 * var(--resize-handle-height));
