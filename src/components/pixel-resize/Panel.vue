@@ -12,6 +12,7 @@ const $el = ref<HTMLElement>(null as any)
 const $panelContent = ref<HTMLElement>(null as any)
 
 const resizing = ref<Boolean>(false)
+const transitions = ref<Boolean>(false)
 
 const panels = ref<(typeof SubPanel)[]>([])
 
@@ -155,6 +156,7 @@ const getTotalOccupiedHeight = (skippedPanels = new Set<typeof SubPanel>()) => {
 
 const onCollapseOrExpand = async (collapse: boolean, entry: SubPanelProps, idx: number, initialMount = false) => {
   // If this is the last expanded entry, find the entry above it that is expanded and add all of its flex to that
+  transitions.value = true
   if (collapse) {
     onCollapse(entry, idx)
   } else {
@@ -337,8 +339,6 @@ onMounted(async () => {
     if (!foundPanelContent) {
       return
     }
-    resizing.value = true
-    await nextTick()
     const visiblePanelContentHeight = $panelContent.value.offsetHeight
     const totalOccupiedHeight = getTotalOccupiedHeight()
     console.log(`new height=${visiblePanelContentHeight} totalOccupiedHeight=${totalOccupiedHeight}`)
@@ -392,17 +392,16 @@ onMounted(async () => {
         }
       }
     }
-    resizing.value = false
   })
   resizeObserver.observe($panelContent.value, { box: 'device-pixel-content-box' })
 })
 </script>
 
 <template>
-  <div class="panel-root is-flex is-flex-direction-column is-flex-grow-1" :class="{ resizing }" ref="$el">
+  <div class="panel-root is-flex is-flex-direction-column is-flex-grow-1" :class="{ transitions }" ref="$el">
     <div class="panel-title">Container</div>
     <div class="panel-content-wrapper">
-      <div class="panel-content" :class="{'updating': currentlyMounting > 0 }" ref="$panelContent">
+      <div class="panel-content" :class="{'updating': currentlyMounting > 0, resizing, transitions }" ref="$panelContent" @transitionend="transitions = false">
         <SubPanelTemplate v-for="(entry, idx) in children" :key="idx">
           <template v-slot:content>
             <SubPanel ref="panels"
@@ -435,9 +434,15 @@ onMounted(async () => {
   --panel-title-height: 24px;
   background-color: var(--panel-bg);
 
-  &.updating, &.resizing {
+  &.updating {
     .sub-panel {
       transition: none;
+    }
+  }
+
+  .transitions {
+    .sub-panel {
+      transition: height 0.1s ease-in-out;
     }
   }
 
@@ -493,10 +498,6 @@ onMounted(async () => {
 
   &.resizing {
     cursor: ns-resize;
-
-    .sub-panel {
-      transition: none;
-    }
   }
 }
 </style>

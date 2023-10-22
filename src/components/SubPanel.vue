@@ -63,7 +63,6 @@ onBeforeUnmount(() => {
 <style lang="scss" scoped>
 .sub-panel-root {
   flex-direction: column;
-  transition: height 0.1s ease-in-out;
   .panel-title {
     width: 100%;
     height: var(--panel-title-height);
