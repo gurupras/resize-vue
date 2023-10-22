@@ -326,7 +326,7 @@ const onBeforeSubPanelUnmount = (entry: SubPanelProps, idx: number) => {
 
 onMounted(async () => {
   await new Promise<void>(resolve => setTimeout(resolve, 300))
-  const resizeObserver = new ResizeObserver(entries => {
+  const resizeObserver = new ResizeObserver(async entries => {
     let foundPanelContent = false
     for (const entry of entries) {
       foundPanelContent = entry.target === $panelContent.value
@@ -337,35 +337,64 @@ onMounted(async () => {
     if (!foundPanelContent) {
       return
     }
-    const height = $panelContent.value.offsetHeight
+    resizing.value = true
+    await nextTick()
+    const visiblePanelContentHeight = $panelContent.value.offsetHeight
     const totalOccupiedHeight = getTotalOccupiedHeight()
-    console.log(`new height=${height} totalOccupiedHeight=${totalOccupiedHeight}`)
-    const diff = height - totalOccupiedHeight
+    console.log(`new height=${visiblePanelContentHeight} totalOccupiedHeight=${totalOccupiedHeight}`)
+    const diff = visiblePanelContentHeight - totalOccupiedHeight
 
-    const shrinkableChildren = props.children.filter((x, idx) => {
-      if (x.collapsed) {
-        return false
+    if (diff > 0) {
+      const result = findPrevExpandedPanel(panels.value.length)
+      if (result) {
+        const [, lastExpandedPanelEl] = result
+        lastExpandedPanelEl.style.height = `${lastExpandedPanelEl.scrollHeight + diff}px`
       }
-      const panel = panels.value[idx]
-      const panelEl: HTMLElement = panel.$el
-      if (panelEl.offsetHeight <= 148) { // FIXME: hard-coded height
-        return false
-      }
-      return true
-    })
-    const perPanelDiff = diff / shrinkableChildren.length
+    } else if (diff < 0) {
+      const absDiff = diff * -1
+      const shrinkablePanels: typeof SubPanel[] = []
+      const shrinkableChildren = props.children.filter((x, idx) => {
+        if (x.collapsed) {
+          return false
+        }
+        const panel = panels.value[idx]
+        const panelEl: HTMLElement = panel.$el
+        if (panelEl.offsetHeight <= 148) { // FIXME: hard-coded height
+          return false
+        }
+        shrinkablePanels.push(panel)
+        return true
+      })
+      const perPanelDiff = Math.floor(absDiff / shrinkableChildren.length) // diff is negative, so we multiply by -1 to make it positive
 
-    for (let idx = 0; idx < props.children.length; idx++) {
-      const panelProps = props.children[idx]
-      if (panelProps.collapsed) {
-        continue
+      let removedHeight = 0
+      for (const panel of shrinkablePanels) {
+        const panelEl: HTMLElement = panel.$el
+        const shrinkableHeight = panelEl.offsetHeight - 148 // FIXME: hard-coded height
+        const reduction = Math.min(perPanelDiff, shrinkableHeight)
+        if (reduction > 0) {
+          panelEl.style.height = `${panelEl.offsetHeight - reduction}px`
+          removedHeight += reduction
+        }
       }
-      const panel = panels.value[idx]
-      const panelEl: HTMLElement = panel.$el
-      panelEl.style.height = `${panelEl.offsetHeight + perPanelDiff}px`
+      // It is possible that we have some remaining pixels to account for (due to Math.floor)
+      let remaining = absDiff - removedHeight
+      for (const panel of shrinkablePanels.reverse()) {
+        if (remaining === 0) {
+          break
+        }
+        const panelEl: HTMLElement = panel.$el
+        const shrinkableHeight = panelEl.offsetHeight - 148 // FIXME: hard-coded height
+        const reduction = Math.min(remaining, shrinkableHeight)
+        if (reduction > 0) {
+          panelEl.style.height = `${panelEl.offsetHeight - reduction}px`
+          remaining -= reduction
+        }
+      }
     }
+    resizing.value = false
   })
-  // resizeObserver.observe($panelContent.value, { box: 'device-pixel-content-box' })
+  resizeObserver.observe($panelContent.value, { box: 'device-pixel-content-box' })
 })
 </script>
 
@@ -406,6 +435,12 @@ onMounted(async () => {
   --panel-title-height: 24px;
   background-color: var(--panel-bg);
 
+  &.updating, &.resizing {
+    .sub-panel {
+      transition: none;
+    }
+  }
+
   .sub-panel {
     // display: block !important;
     width: 100%;
@@ -432,12 +467,6 @@ onMounted(async () => {
     overflow-y: auto;
     &.updating {
       overflow-y: hidden;
-    }
-
-    &.updating, &.resizing {
-      .sub-panel {
-        transition: none;
-      }
     }
 
     > .sub-panel + .resize-handle {
