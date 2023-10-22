@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { nextTick, ref } from 'vue'
+import { nextTick, onMounted, ref } from 'vue'
 import SubPanel from '../SubPanel.vue'
 import SubPanelTemplate from '../SubPanelTemplate.vue'
 import { SubPanelProps } from '../types'
@@ -7,6 +7,9 @@ import { SubPanelProps } from '../types'
 const props = defineProps<{
   children: SubPanelProps[]
 }>()
+
+const $el = ref<HTMLElement>(null as any)
+const $panelContent = ref<HTMLElement>(null as any)
 
 const resizing = ref<Boolean>(false)
 
@@ -290,7 +293,18 @@ const computeResizeHandleDisabled = (prev: SubPanelProps | undefined, current: S
   return false
 }
 
-const beforeSubPanelUnmount = (entry: SubPanelProps, idx: number) => {
+const currentlyMounting = ref<number>(0)
+const onBeforeSubPanelMount = (entry: SubPanelProps, idx: number) => {
+  currentlyMounting.value += 1
+}
+
+const onSubPanelMounted = async (entry: SubPanelProps, idx: number) => {
+  await onCollapseOrExpand(!!entry.collapsed, entry, idx, true)
+  await nextTick()
+  currentlyMounting.value -= 1
+}
+
+const onBeforeSubPanelUnmount = (entry: SubPanelProps, idx: number) => {
   // Find the next panel and trigger onExpand on it
   let nextIdx: number | undefined
   const result = findNextExpandedPanel(idx)
@@ -358,7 +372,7 @@ onMounted(async () => {
   <div class="panel-root is-flex is-flex-direction-column is-flex-grow-1" :class="{ resizing }" ref="$el">
     <div class="panel-title">Container</div>
     <div class="panel-content-wrapper">
-      <div class="panel-content" ref="$panelContent">
+      <div class="panel-content" :class="{'updating': currentlyMounting > 0 }" ref="$panelContent">
         <SubPanelTemplate v-for="(entry, idx) in children" :key="idx">
           <template v-slot:content>
             <SubPanel ref="panels"
@@ -367,8 +381,9 @@ onMounted(async () => {
                 @update:collapsed="v => updateCollapsed(v, idx)"
                 @collapsed="onCollapseOrExpand(true, entry, idx)"
                 @expanded="onCollapseOrExpand(false, entry, idx)"
-                @mounted="onCollapseOrExpand(!!entry.collapsed, entry, idx, true)"
-                @before-unmount="beforeSubPanelUnmount(entry, idx)"
+                @before-mount="onBeforeSubPanelMount(entry, idx)"
+                @mounted="onSubPanelMounted(entry, idx)"
+                @before-unmount="onBeforeSubPanelUnmount(entry, idx)"
                 class="sub-panel"/>
           </template>
           <template v-slot:after>
@@ -414,6 +429,15 @@ onMounted(async () => {
     height: 100%;
     overflow-x: hidden;
     overflow-y: auto;
+    &.updating {
+      overflow-y: hidden;
+    }
+
+    &.updating, &.resizing {
+      .sub-panel {
+        transition: none;
+      }
+    }
 
     > .sub-panel + .resize-handle {
       // margin-top: calc(-1 * var(--resize-handle-height));

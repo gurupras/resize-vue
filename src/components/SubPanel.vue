@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { onBeforeMount, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import type { SubPanelProps } from './types'
 const props = withDefaults(defineProps<SubPanelProps>(), {
   collapsed: false
@@ -12,6 +12,7 @@ const emit = defineEmits<{
   (e: 'update:collapsed', value: boolean): void,
   (e: 'collapsed'): void,
   (e: 'expanded'): void,
+  (e: 'beforeMount'): void,
   (e: 'mounted'): void,
   (e: 'beforeUnmount'): void
 }>()
@@ -33,6 +34,9 @@ watch(() => props.collapsed, (v) => {
   }
 })
 
+onBeforeMount(() => {
+  emit('beforeMount')
+})
 onMounted(() => {
   emit('mounted')
 })
