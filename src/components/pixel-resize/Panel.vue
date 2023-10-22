@@ -11,6 +11,7 @@ const props = defineProps<{
 const $el = ref<HTMLElement>(null as any)
 const $panelContent = ref<HTMLElement>(null as any)
 
+const resizable = ref<Boolean>(true)
 const resizing = ref<Boolean>(false)
 const transitions = ref<Boolean>(false)
 
@@ -340,6 +341,11 @@ onMounted(async () => {
       return
     }
     const visiblePanelContentHeight = $panelContent.value.offsetHeight
+    if ($panelContent.value.scrollHeight > visiblePanelContentHeight) {
+      resizable.value = false
+    } else {
+      resizable.value = true
+    }
     const totalOccupiedHeight = getTotalOccupiedHeight()
     console.log(`new height=${visiblePanelContentHeight} totalOccupiedHeight=${totalOccupiedHeight}`)
     const diff = visiblePanelContentHeight - totalOccupiedHeight
@@ -398,7 +404,7 @@ onMounted(async () => {
 </script>
 
 <template>
-  <div class="panel-root is-flex is-flex-direction-column is-flex-grow-1" :class="{ transitions }" ref="$el">
+  <div class="panel-root is-flex is-flex-direction-column is-flex-grow-1" :class="{ transitions, resizable }" ref="$el">
     <div class="panel-title">Container</div>
     <div class="panel-content-wrapper">
       <div class="panel-content" :class="{'updating': currentlyMounting > 0, resizing, transitions }" ref="$panelContent" @transitionend="transitions = false">
@@ -417,7 +423,7 @@ onMounted(async () => {
           </template>
           <template v-slot:after>
             <ResizeHandle class="resize-handle"
-                :class="{ disabled: computeResizeHandleDisabled(children[idx - 1], children[idx], children[idx + 1])}"
+                :class="{ disabled: !resizable || computeResizeHandleDisabled(children[idx - 1], children[idx], children[idx + 1])}"
                 v-if="idx !== children.length - 1"
                 @resizestart="e => onResizeStart(e, idx)"
                 @resize="e => onResize(e, idx)"
@@ -484,13 +490,13 @@ onMounted(async () => {
 
   .resize-handle {
     margin-top: calc(-1 * var(--resize-handle-height));
-    &:hover {
+    &:not(.disabled):hover {
       background-color: var(--resize-hover-color);
       transition: background-color 0.3s ease-in-out;
       transition-delay: 0.2s;
     }
 
-    .disabled {
+    &.disabled {
       cursor: default;
       user-select: none;
     }
