@@ -167,6 +167,7 @@ const onCollapse = async (entry: SubPanelProps, idx: number) => {
   const collapsedPanelEl: HTMLElement = collapsedPanel.$el
 
   let siblingExpandedPanel: HTMLElement
+  const heightBeforeCollapse = collapsedPanelEl.scrollHeight
   const collapsedPanelMinHeight = 24 // FIXME: This should not be hard-coded
   const nextExpandedResult = findNextExpandedPanel(idx)
   if (nextExpandedResult === null) {
@@ -183,11 +184,11 @@ const onCollapse = async (entry: SubPanelProps, idx: number) => {
   await nextTick()
   // const collapsedPanelMinHeight = Number(getComputedStyle(collapsedPanelEl).height.slice(0, -2))
   const parent = collapsedPanelEl.parentElement!
-  const totalParentHeight = parent.scrollHeight
   const totalOccupiedHeight = getTotalOccupiedHeight(new Set([collapsedPanel])) + collapsedPanelMinHeight
-  const unoccupiedHeight = totalParentHeight - totalOccupiedHeight
-  siblingExpandedPanel.style.height = `${siblingExpandedPanel.scrollHeight + unoccupiedHeight}px`
-  // TODO: Since we modified a sibling panel's height, figure out if we should reset userHeight
+  const unoccupiedHeight = parent.offsetHeight - totalOccupiedHeight
+  if (unoccupiedHeight > 0) {
+    siblingExpandedPanel.style.height = `${siblingExpandedPanel.scrollHeight + unoccupiedHeight}px`
+  }
   collapsedPanelEl.style.height = `${collapsedPanelMinHeight}px`
 }
 
