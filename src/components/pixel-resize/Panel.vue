@@ -477,13 +477,6 @@ onMounted(async () => {
     &.updating {
       overflow-y: hidden;
     }
-
-    > .sub-panel + .resize-handle {
-      // margin-top: calc(-1 * var(--resize-handle-height));
-    }
-    > .resize-handle + .sub-panel {
-      // margin-top: calc(-1 * var(--resize-handle-height));
-    }
   }
 
   .resize-handle {
