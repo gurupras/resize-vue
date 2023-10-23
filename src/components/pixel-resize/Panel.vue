@@ -170,7 +170,6 @@ const onCollapse = async (entry: SubPanelProps, idx: number) => {
   const collapsedPanelEl: HTMLElement = collapsedPanel.$el
 
   let siblingExpandedPanel: HTMLElement
-  const heightBeforeCollapse = collapsedPanelEl.scrollHeight
   const collapsedPanelMinHeight = 24 // FIXME: This should not be hard-coded
   const nextExpandedResult = findNextExpandedPanel(idx)
   if (nextExpandedResult === null) {
@@ -328,7 +327,6 @@ const onBeforeSubPanelUnmount = (entry: SubPanelProps, idx: number) => {
 }
 
 onMounted(async () => {
-  await new Promise<void>(resolve => setTimeout(resolve, 300))
   const resizeObserver = new ResizeObserver(async entries => {
     let foundPanelContent = false
     for (const entry of entries) {
