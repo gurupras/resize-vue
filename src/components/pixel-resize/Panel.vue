@@ -423,8 +423,8 @@ onMounted(async () => {
             <ResizeHandle class="resize-handle"
                 :class="{ disabled: !resizable || computeResizeHandleDisabled(children[idx - 1], children[idx], children[idx + 1])}"
                 v-if="idx !== children.length - 1"
-                @resizestart="e => onResizeStart(e, idx)"
-                @resize="e => onResize(e, idx)"
+                @resizestart="(e: MouseEvent) => onResizeStart(e, idx)"
+                @resize="(e: MouseEvent) => onResize(e, idx)"
                 @resizeend="resizing = false"/>
           </template>
         </SubPanelTemplate>
