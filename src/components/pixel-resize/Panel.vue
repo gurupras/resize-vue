@@ -314,8 +314,13 @@ const onExpand = async (entry: SubPanelProps, idx: number, initialMount = false)
   console.log(`[expand-${idx}]: completed`)
 }
 
-const computeResizeHandleDisabled = (prev: SubPanelProps | undefined, current: SubPanelProps, next: SubPanelProps | undefined) => {
-  if (current.collapsed && next?.collapsed) {
+const computeResizeHandleDisabled = (prevPanelIdx: number) => {
+  let result = findPrevExpandedPanel(prevPanelIdx + 1)
+  if (!result) {
+    return true
+  }
+  result = findNextExpandedPanel(prevPanelIdx)
+  if (!result) {
     return true
   }
   return false
@@ -446,8 +451,8 @@ onMounted(async () => {
           </template>
           <template v-slot:after>
             <ResizeHandle class="resize-handle"
-                :class="{ disabled: !resizable || computeResizeHandleDisabled(children[idx - 1], children[idx], children[idx + 1])}"
-                v-if="idx !== children.length - 1"
+                :class="{ disabled: !resizable }"
+                v-show="!computeResizeHandleDisabled(idx)"
                 @resizestart="(e: MouseEvent) => onResizeStart(e, idx)"
                 @resize="(e: MouseEvent) => onResize(e, idx)"
                 @resizeend="resizing = false"/>
