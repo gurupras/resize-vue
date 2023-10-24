@@ -44,19 +44,14 @@ const _findExpandedPanel = (idx: number, next: (idx: number) => number): ([numbe
 const { onResizeStart, onResize } = getResizeMethods()
 
 function getResizeMethods () {
-  let prevPanel: HTMLElement
-  let nextPanel: HTMLElement | null
+  let prevPanelEl: HTMLElement
+  let nextPanelEl: HTMLElement | null
   let nextPanelIdx: number
-
-  let prevCSS: CSSStyleDeclaration
-  let nextCSS: CSSStyleDeclaration
 
   let prevSizeOld: number
   let nextSizeOld: number
   let totalSizeOld: number
 
-  let prevFlexGrowOld: number
-  let nextFlexGrowOld: number
   let totalFlexGrowOld: number
 
   let lastPosition: number
@@ -71,47 +66,77 @@ function getResizeMethods () {
   }
 
   const onResize = (e: MouseEvent, idx: number) => {
-    prevPanel = panels.value[idx].$el
-    const result = findNextExpandedPanel(idx)
-
-    if (!result) {
-      return
-    }
-
-    ;[nextPanelIdx, nextPanel] = result
-
-    prevCSS = window.getComputedStyle(prevPanel)
-    nextCSS = window.getComputedStyle(nextPanel!)
-
-    prevSizeOld = prevPanel[sizeProp] as number
-    nextSizeOld = nextPanel![sizeProp] as number
-    totalSizeOld = prevSizeOld + nextSizeOld
-
     const newPosition = e[positionProp]
     const diff = newPosition - lastPosition
 
-    prevSizeOld += diff
-    nextSizeOld -= diff
+    // Keep in mind that idx represents the panel above the resize handle.
 
-    if (prevSizeOld < 0) {
-      // props.children[idx].collapsed = true
-      prevSizeOld = 0
-    } else {
-      // props.children[idx].collapsed = false
+    if (diff < 0) {
+      // We're attempting to shrink one of the above panels and add space to the next panel
+      // Find the next expanded panel that we would be adding space to
+      const result = findNextExpandedPanel(idx)
+      if (!result) {
+        // There is no expanded panel below this
+        return
+      }
+      const [, nextPanelEl] = result
+      // Find first shrinkable panel <= idx
+      let firstShrinkablePanel: typeof SubPanel | undefined
+      let prevShrinkablePanelEl: HTMLElement | undefined
+      for (let i = idx; i >= 0; i--) {
+        const child = props.children[i]
+        if (child.collapsed) {
+          continue
+        }
+        const panel = panels.value[i]
+        const panelEl: HTMLElement = panel.$el
+        if (panelEl.offsetHeight <= 148) { // FIXME: hard-coded height
+          continue
+        }
+        firstShrinkablePanel = panel
+        prevShrinkablePanelEl = panelEl
+        break
+      }
+      if (!firstShrinkablePanel || !prevShrinkablePanelEl) {
+        // There is no shrinkable panel above this
+        return
+      }
+      prevShrinkablePanelEl.style.height = `${prevShrinkablePanelEl.offsetHeight + diff}px` // diff is negative
+      nextPanelEl.style.height = `${nextPanelEl.offsetHeight - diff}px` // diff is negative
+    } else if (diff > 0) {
+      // We're attempting to shrink one of the below panels and add space to the above panel
+      // Find the above expanded panel that we would be adding space to
+      const result = findPrevExpandedPanel(idx + 1) // Since idx already represents the panel above, we're going to pass idx + 1 so that it can return the panel at idx if it is expanded
+      if (!result) {
+        // There is no expanded panel above this
+        return
+      }
+      const [, prevPanelEl] = result
+
+      let nextShrinkablePanel: typeof SubPanel | undefined
+      let nextShrinkablePanelEl: HTMLElement | undefined
+      for (let i = idx + 1; i < props.children.length; i++) { // We start from idx + 1 because idx represents the panel above
+        const child = props.children[i]
+        if (child.collapsed) {
+          continue
+        }
+        const panel = panels.value[i]
+        const panelEl: HTMLElement = panel.$el
+        if (panelEl.offsetHeight <= 148) { // FIXME: hard-coded height
+          continue
+        }
+        nextShrinkablePanel = panel
+        nextShrinkablePanelEl = panelEl
+        break
+      }
+      if (!nextShrinkablePanel || !nextShrinkablePanelEl) {
+        // There is no shrinkable panel below this
+        // Just return
+        return
+      }
+      prevPanelEl.style.height = `${prevPanelEl.offsetHeight + diff}px` // Increment height of previous panel
+      nextShrinkablePanelEl.style.height = `${nextShrinkablePanelEl.offsetHeight - diff}px` // Decrement height of next panel
     }
-    if (nextSizeOld < 0) {
-      // props.children[nextPanelIdx].collapsed = true
-      nextSizeOld = 0
-    } else {
-      // props.children[nextPanelIdx].collapsed = false
-    }
-
-    const prevFlexGrowNew = totalFlexGrowOld * (prevSizeOld / totalSizeOld)
-    const nextFlexGrowNew = totalFlexGrowOld * (nextSizeOld / totalSizeOld)
-
-    prevPanel.style.flexGrow = `${prevFlexGrowNew}`
-    nextPanel!.style.flexGrow = `${nextFlexGrowNew}`
-
     lastPosition = newPosition
   }
   return {
