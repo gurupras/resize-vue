@@ -84,7 +84,9 @@ onBeforeUnmount(() => {
   }
 
   &.collapsed {
-    flex-grow: 0 !important;
+    .panel-title {
+      border: thin solid #eaeaea;
+    }
   }
 }
 </style>
