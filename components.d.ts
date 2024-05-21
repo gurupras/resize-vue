@@ -9,6 +9,7 @@ export {}
 
 declare module '@vue/runtime-core' {
   export interface GlobalComponents {
+    IMdiCheck: typeof import('~icons/mdi/check')['default']
     IMdiChevronDown: typeof import('~icons/mdi/chevron-down')['default']
     IMdiChevronRight: typeof import('~icons/mdi/chevron-right')['default']
     Panel: typeof import('./src/components/Panel.vue')['default']
